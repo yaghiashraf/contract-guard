@@ -124,7 +124,7 @@ export default function PaywallModal({ isOpen, onClose, onUpgrade }: PaywallModa
                     } ${plan.popular ? 'shadow-xl shadow-blue-500/20' : ''}`}
                   >
                     {plan.badge && (
-                      <div className={`absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-semibold ${
+                      <div className={`absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${
                         plan.popular
                           ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
                           : 'bg-zinc-700 text-zinc-300'
