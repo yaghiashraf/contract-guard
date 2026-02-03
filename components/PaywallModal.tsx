@@ -6,43 +6,62 @@ import { useState } from 'react';
 interface PaywallModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onUpgrade: (plan: 'unlimited' | 'pro') => void;
+  onUpgrade: (plan: 'onetime' | 'monthly' | 'annual') => void;
 }
 
 export default function PaywallModal({ isOpen, onClose, onUpgrade }: PaywallModalProps) {
-  const [selectedPlan, setSelectedPlan] = useState<'unlimited' | 'pro'>('unlimited');
+  const [selectedPlan, setSelectedPlan] = useState<'onetime' | 'monthly' | 'annual'>('monthly');
 
   const plans = [
     {
-      id: 'unlimited' as const,
+      id: 'onetime' as const,
+      name: 'Pay Per Use',
+      price: '$9.99',
+      period: '/contract',
+      features: [
+        '✓ One contract analysis',
+        '✓ AI risk detection',
+        '✓ Plain-English summary',
+        '✓ Risk score breakdown',
+        '✓ Instant PDF report',
+      ],
+      cta: 'Pay $9.99',
+      popular: false,
+      badge: 'Best for One-Time Use',
+    },
+    {
+      id: 'monthly' as const,
       name: 'Unlimited Plan',
       price: '$99',
       period: '/month',
       features: [
         '✓ Unlimited contract analyses',
-        '✓ Standard risk detection',
+        '✓ Advanced risk detection',
         '✓ Plain-English reports',
         '✓ PDF exports',
         '✓ Priority support',
+        '✓ Cancel anytime',
       ],
-      cta: 'Upgrade to Unlimited',
+      cta: 'Subscribe for $99/mo',
       popular: true,
+      badge: 'Most Popular',
     },
     {
-      id: 'pro' as const,
-      name: 'Professional Plan',
-      price: '$199',
+      id: 'annual' as const,
+      name: 'Annual Plan',
+      price: '$79',
       period: '/month',
       features: [
         '✓ Everything in Unlimited',
-        '✓ Comprehensive deep analysis',
-        '✓ AI clause substitution suggestions',
-        '✓ Custom risk profiles',
-        '✓ Team collaboration',
-        '✓ White-label reports',
+        '✓ Save $240/year (20% off)',
+        '✓ Billed annually at $948',
+        '✓ Priority support',
+        '✓ Early access to features',
+        '✓ Cancel anytime',
       ],
-      cta: 'Upgrade to Professional',
+      cta: 'Subscribe for $79/mo',
       popular: false,
+      badge: 'Best Value',
     },
   ];
 
@@ -90,7 +109,7 @@ export default function PaywallModal({ isOpen, onClose, onUpgrade }: PaywallModa
               </div>
 
               {/* Plans */}
-              <div className="grid md:grid-cols-2 gap-6 mb-8">
+              <div className="grid md:grid-cols-3 gap-6 mb-8">
                 {plans.map((plan, i) => (
                   <motion.div
                     key={plan.id}
@@ -104,9 +123,13 @@ export default function PaywallModal({ isOpen, onClose, onUpgrade }: PaywallModa
                         : 'border-zinc-700 bg-zinc-900/50 hover:border-zinc-600'
                     } ${plan.popular ? 'shadow-xl shadow-blue-500/20' : ''}`}
                   >
-                    {plan.popular && (
-                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-1 rounded-full text-xs font-semibold">
-                        Most Popular
+                    {plan.badge && (
+                      <div className={`absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-semibold ${
+                        plan.popular
+                          ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
+                          : 'bg-zinc-700 text-zinc-300'
+                      }`}>
+                        {plan.badge}
                       </div>
                     )}
 

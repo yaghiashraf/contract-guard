@@ -6,6 +6,27 @@ import { useState } from 'react';
 export default function PricingSection() {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
 
+  const handleSubscribe = async (cycle: 'monthly' | 'annual') => {
+    try {
+      // Import Stripe checkout function
+      const { createCheckoutSession, STRIPE_PRICES } = await import('@/lib/stripe');
+
+      // Determine price ID based on billing cycle
+      const priceId = cycle === 'monthly' ? STRIPE_PRICES.monthly : STRIPE_PRICES.annual;
+
+      // Create Stripe checkout session
+      const { url } = await createCheckoutSession(priceId, 'subscription');
+
+      // Redirect to Stripe checkout
+      if (url) {
+        window.location.href = url;
+      }
+    } catch (error) {
+      console.error('Checkout failed:', error);
+      alert('Failed to start checkout. Please try again.');
+    }
+  };
+
   const plans = [
     {
       name: 'Pay Per Use',
@@ -183,9 +204,18 @@ export default function PricingSection() {
               </ul>
 
               <button
+                onClick={() => {
+                  if (plan.name === 'Pay Per Use') {
+                    // Scroll to upload section for pay-per-use
+                    document.getElementById('upload')?.scrollIntoView({ behavior: 'smooth' });
+                  } else {
+                    // For subscriptions, redirect to Stripe checkout
+                    handleSubscribe(billingCycle);
+                  }
+                }}
                 className={`w-full py-4 rounded-xl font-semibold text-lg transition-all duration-300 ${
                   plan.popular
-                    ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white'
+                    ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg shadow-blue-500/50'
                     : 'bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700 hover:border-zinc-600'
                 }`}
               >

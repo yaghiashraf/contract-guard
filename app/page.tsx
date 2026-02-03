@@ -115,7 +115,13 @@ export default function Home() {
                 >
                   Analyze Contract for $9.99
                 </button>
-                <button className="px-8 py-4 glass hover:bg-zinc-800/50 text-white rounded-lg font-semibold text-lg transition border border-zinc-700">
+                <button
+                  onClick={() => {
+                    // Scroll to how it works section to see example
+                    document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="px-8 py-4 glass hover:bg-zinc-800/50 text-white rounded-lg font-semibold text-lg transition border border-zinc-700"
+                >
                   See Example Report
                 </button>
               </motion.div>

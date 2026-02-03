@@ -75,17 +75,37 @@ export default function UploadSection({ setAnalysisResult }: UploadSectionProps)
     }
   };
 
-  const handleUpgrade = (plan: 'unlimited' | 'pro') => {
-    // In production, this would integrate with Stripe
-    console.log('Upgrading to plan:', plan);
+  const handleUpgrade = async (plan: 'onetime' | 'monthly' | 'annual') => {
+    try {
+      // Import Stripe checkout function
+      const { createCheckoutSession, STRIPE_PRICES } = await import('@/lib/stripe');
 
-    // For demo purposes, simulate successful upgrade
-    upgradeToPremium();
-    setShowPaywall(false);
-    setRemaining(Infinity);
+      // Determine price ID and mode based on plan
+      let priceId: string;
+      let mode: 'payment' | 'subscription';
 
-    // Show success message
-    alert(`Successfully upgraded to ${plan === 'unlimited' ? 'Unlimited' : 'Professional'} plan!`);
+      if (plan === 'onetime') {
+        priceId = STRIPE_PRICES.oneTime;
+        mode = 'payment';
+      } else if (plan === 'monthly') {
+        priceId = STRIPE_PRICES.monthly;
+        mode = 'subscription';
+      } else {
+        priceId = STRIPE_PRICES.annual;
+        mode = 'subscription';
+      }
+
+      // Create Stripe checkout session
+      const { url } = await createCheckoutSession(priceId, mode);
+
+      // Redirect to Stripe checkout
+      if (url) {
+        window.location.href = url;
+      }
+    } catch (error) {
+      console.error('Upgrade failed:', error);
+      alert('Failed to start checkout. Please try again.');
+    }
   };
 
   return (
