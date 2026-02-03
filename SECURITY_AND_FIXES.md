@@ -181,7 +181,7 @@ npm audit fix
 | Contract upload | ✅ Working | 10MB limit, PDF only |
 | AI analysis | ✅ Working | Rule-based + HF API |
 | Paywall modal | ✅ Working | Shows after 1st upload |
-| Stripe checkout | ✅ **FIXED** | All 3 plans working |
+| Stripe checkout | ✅ **FIXED** | All 3 plans working (newline bug fixed) |
 | Payment processing | ✅ Working | Test mode |
 | Success page | ✅ Working | Premium upgrade |
 | Unlimited access | ✅ Working | After payment |
@@ -204,14 +204,40 @@ npm audit fix
 
 ---
 
+### 4. ✅ Environment Variable Newline Bug - FIXED
+
+**Problem**: Stripe checkout was failing with "No such price: 'price_1SwoJxA3gGBV3QMFrxcBXvC5\n'"
+
+**Root Cause**: Newline character (`\n`) was appended to Price IDs when added via CLI heredoc
+
+**Solution**:
+- Removed all three Price ID environment variables
+- Re-added them using `printf` instead of heredoc to prevent trailing newlines
+- Redeployed to production
+
+**Code Changes**:
+```bash
+# Wrong way (adds newline):
+cat <<EOF | vercel env add PRICE production
+price_1SwoJxA3gGBV3QMFrxcBXvC5
+EOF
+
+# Correct way (no newline):
+printf 'price_1SwoJxA3gGBV3QMFrxcBXvC5' | vercel env add PRICE production
+```
+
+**Status**: ✅ Resolved - All Stripe Price IDs now working correctly
+
+---
+
 ## 📋 Environment Variables Set
 
 Production environment variables configured:
 
 - ✅ `NEXT_PUBLIC_APP_URL` = https://contract-guard-eta.vercel.app
-- ✅ `NEXT_PUBLIC_STRIPE_PRICE_ONE_TIME`
-- ✅ `NEXT_PUBLIC_STRIPE_PRICE_MONTHLY`
-- ✅ `NEXT_PUBLIC_STRIPE_PRICE_ANNUAL`
+- ✅ `NEXT_PUBLIC_STRIPE_PRICE_ONE_TIME` = price_1SwoJeA3gGBV3QMF507d1sFl
+- ✅ `NEXT_PUBLIC_STRIPE_PRICE_MONTHLY` = price_1SwoJxA3gGBV3QMFrxcBXvC5
+- ✅ `NEXT_PUBLIC_STRIPE_PRICE_ANNUAL` = price_1SwoK8A3gGBV3QMFeOuBVfQi
 - ✅ `STRIPE_SECRET_KEY`
 - ✅ `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
 - ✅ `HF_TOKEN`
@@ -267,6 +293,7 @@ Production environment variables configured:
 **All critical issues resolved!**
 
 - ✅ Checkout URL error **FIXED**
+- ✅ Environment variable newline bug **FIXED**
 - ✅ Security vulnerabilities **PATCHED**
 - ✅ Hugging Face API **UPDATED**
 - ✅ Stripe products **CONFIGURED**
