@@ -102,9 +102,18 @@ export default function UploadSection({ setAnalysisResult }: UploadSectionProps)
       if (url) {
         window.location.href = url;
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Upgrade failed:', error);
-      alert('Failed to start checkout. Please try again.');
+
+      // Show user-friendly error message
+      const errorMessage = error.message || 'Failed to start checkout. Please try again.';
+
+      // Display error in a more visible way
+      if (errorMessage.includes('not configured')) {
+        alert('⚠️ Payment Setup Required\n\nStripe products need to be configured. Please contact support or try again later.');
+      } else {
+        alert(`Failed to start checkout: ${errorMessage}`);
+      }
     }
   };
 

@@ -21,9 +21,17 @@ export default function PricingSection() {
       if (url) {
         window.location.href = url;
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Checkout failed:', error);
-      alert('Failed to start checkout. Please try again.');
+
+      // Show user-friendly error message
+      const errorMessage = error.message || 'Failed to start checkout. Please try again.';
+
+      if (errorMessage.includes('not configured')) {
+        alert('⚠️ Payment Setup Required\n\nStripe products need to be configured. Please contact support or try again later.');
+      } else {
+        alert(`Failed to start checkout: ${errorMessage}`);
+      }
     }
   };
 
