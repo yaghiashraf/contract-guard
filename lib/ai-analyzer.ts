@@ -1,6 +1,7 @@
 // AI Contract Analyzer using Hugging Face Inference API
 // Note: Using a smaller, faster model that works with the free tier
-const HF_API_URL = 'https://api-inference.huggingface.co/models/facebook/bart-large-cnn';
+// Updated to use new router endpoint (api-inference.huggingface.co is deprecated)
+const HF_API_URL = 'https://router.huggingface.co/models/facebook/bart-large-cnn';
 const HF_TOKEN = process.env.HF_TOKEN;
 
 interface RiskFlag {
