@@ -5,6 +5,6 @@
   "framework": "nextjs",
   "outputDirectory": ".next",
   "env": {
-    "OPENAI_API_KEY": "@openai_api_key"
+    "HF_TOKEN": "@hf_token"
   }
 }
