@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
       }
 
       case 'customer.subscription.created': {
-        const subscription = event.data.object as Stripe.Subscription;
+        const subscription = event.data.object as any; // Use any to access all Stripe properties
         console.log('Subscription created:', subscription.id);
 
         const customerId = subscription.customer as string;
@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
       }
 
       case 'customer.subscription.updated': {
-        const subscription = event.data.object as Stripe.Subscription;
+        const subscription = event.data.object as any; // Use any to access all Stripe properties
         console.log('Subscription updated:', subscription.id);
 
         const updateData: any = {
