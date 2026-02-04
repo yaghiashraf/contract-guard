@@ -1,11 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { createClient } from '@supabase/supabase-js';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2026-01-28.clover',
 });
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+// Create Supabase client with service role for bypassing RLS
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  }
+);
 
 export async function POST(request: NextRequest) {
   try {
@@ -38,10 +51,47 @@ export async function POST(request: NextRequest) {
         const session = event.data.object as Stripe.Checkout.Session;
         console.log('Payment successful:', session.id);
 
-        // TODO: In production, you would:
-        // 1. Get customer email from session.customer_details.email
-        // 2. Update user's premium status in your database
-        // 3. Send welcome email
+        const email = session.customer_details?.email;
+        const customerId = session.customer as string;
+
+        if (email) {
+          // Find user by email
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('email', email)
+            .single();
+
+          if (profile) {
+            // Determine plan type
+            const priceId = session.line_items?.data[0]?.price?.id || '';
+            let planType = 'onetime';
+            if (priceId === process.env.NEXT_PUBLIC_STRIPE_PRICE_MONTHLY) {
+              planType = 'monthly';
+            } else if (priceId === process.env.NEXT_PUBLIC_STRIPE_PRICE_ANNUAL) {
+              planType = 'annual';
+            }
+
+            // Create or update subscription
+            const { error } = await supabase
+              .from('subscriptions')
+              .upsert({
+                user_id: profile.id,
+                stripe_customer_id: customerId,
+                stripe_price_id: priceId,
+                status: session.mode === 'subscription' ? 'active' : 'inactive',
+                plan_type: planType,
+                current_period_start: session.mode === 'subscription' ? new Date().toISOString() : null,
+                current_period_end: session.mode === 'subscription' ? null : null,
+              }, {
+                onConflict: 'user_id',
+              });
+
+            if (error) {
+              console.error('Error creating subscription:', error);
+            }
+          }
+        }
 
         break;
       }
@@ -50,10 +100,23 @@ export async function POST(request: NextRequest) {
         const subscription = event.data.object as Stripe.Subscription;
         console.log('Subscription created:', subscription.id);
 
-        // TODO: In production, you would:
-        // 1. Get customer ID
-        // 2. Mark user as premium in database
-        // 3. Set subscription end date
+        const customerId = subscription.customer as string;
+
+        // Find subscription by customer ID and update
+        const { error } = await supabase
+          .from('subscriptions')
+          .update({
+            stripe_subscription_id: subscription.id,
+            status: subscription.status,
+            current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+            current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+            cancel_at_period_end: subscription.cancel_at_period_end,
+          })
+          .eq('stripe_customer_id', customerId);
+
+        if (error) {
+          console.error('Error updating subscription:', error);
+        }
 
         break;
       }
@@ -62,7 +125,19 @@ export async function POST(request: NextRequest) {
         const subscription = event.data.object as Stripe.Subscription;
         console.log('Subscription updated:', subscription.id);
 
-        // Handle subscription changes (upgrade/downgrade)
+        const { error } = await supabase
+          .from('subscriptions')
+          .update({
+            status: subscription.status,
+            current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+            current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+            cancel_at_period_end: subscription.cancel_at_period_end,
+          })
+          .eq('stripe_subscription_id', subscription.id);
+
+        if (error) {
+          console.error('Error updating subscription:', error);
+        }
 
         break;
       }
@@ -71,10 +146,17 @@ export async function POST(request: NextRequest) {
         const subscription = event.data.object as Stripe.Subscription;
         console.log('Subscription cancelled:', subscription.id);
 
-        // TODO: In production, you would:
-        // 1. Get customer ID
-        // 2. Revoke premium access
-        // 3. Send cancellation confirmation email
+        const { error } = await supabase
+          .from('subscriptions')
+          .update({
+            status: 'canceled',
+            cancel_at_period_end: false,
+          })
+          .eq('stripe_subscription_id', subscription.id);
+
+        if (error) {
+          console.error('Error canceling subscription:', error);
+        }
 
         break;
       }

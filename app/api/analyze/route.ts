@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { analyzeContractWithAI } from '@/lib/ai-analyzer';
+import { createClient } from '@/lib/supabase/server';
 
 // Security: File size limit (10MB)
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -84,6 +85,30 @@ export async function POST(request: NextRequest) {
 
     // Analyze with AI
     const analysis = await analyzeContractWithAI(text);
+
+    // Save analysis to database if user is authenticated
+    try {
+      const supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        await supabase.from('analyses').insert({
+          user_id: user.id,
+          file_name: file.name,
+          file_size: file.size,
+          overall_risk: analysis.overallRisk,
+          risk_score: analysis.riskScore,
+          red_flags_count: analysis.redFlags.length,
+          summary: analysis.summary,
+          red_flags: analysis.redFlags,
+        });
+      }
+    } catch (dbError) {
+      console.error('Failed to save analysis to database:', dbError);
+      // Don't fail the request if database save fails
+    }
 
     return NextResponse.json({
       success: true,
