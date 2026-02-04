@@ -103,15 +103,23 @@ export async function POST(request: NextRequest) {
         const customerId = subscription.customer as string;
 
         // Find subscription by customer ID and update
+        const updateData: any = {
+          stripe_subscription_id: subscription.id,
+          status: subscription.status,
+          cancel_at_period_end: subscription.cancel_at_period_end,
+        };
+
+        // Add period dates if they exist
+        if (subscription.current_period_start) {
+          updateData.current_period_start = new Date(subscription.current_period_start * 1000).toISOString();
+        }
+        if (subscription.current_period_end) {
+          updateData.current_period_end = new Date(subscription.current_period_end * 1000).toISOString();
+        }
+
         const { error } = await supabase
           .from('subscriptions')
-          .update({
-            stripe_subscription_id: subscription.id,
-            status: subscription.status,
-            current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-            current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-            cancel_at_period_end: subscription.cancel_at_period_end,
-          })
+          .update(updateData)
           .eq('stripe_customer_id', customerId);
 
         if (error) {
@@ -125,14 +133,22 @@ export async function POST(request: NextRequest) {
         const subscription = event.data.object as Stripe.Subscription;
         console.log('Subscription updated:', subscription.id);
 
+        const updateData: any = {
+          status: subscription.status,
+          cancel_at_period_end: subscription.cancel_at_period_end,
+        };
+
+        // Add period dates if they exist
+        if (subscription.current_period_start) {
+          updateData.current_period_start = new Date(subscription.current_period_start * 1000).toISOString();
+        }
+        if (subscription.current_period_end) {
+          updateData.current_period_end = new Date(subscription.current_period_end * 1000).toISOString();
+        }
+
         const { error } = await supabase
           .from('subscriptions')
-          .update({
-            status: subscription.status,
-            current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-            current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-            cancel_at_period_end: subscription.cancel_at_period_end,
-          })
+          .update(updateData)
           .eq('stripe_subscription_id', subscription.id);
 
         if (error) {
